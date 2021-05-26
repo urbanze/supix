@@ -10,9 +10,9 @@ This simple python script, capture some infos about your hardware and save it in
 With this variables wrote in SQLite database, you can visualize with any program, like Grafana!
 
 # How many variables?
-14!
+15!
 
- * CPU: Average in 1, 5 and 15min.
+ * CPU: Average in 1, 5 and 15min, Temperature.
  * RAM: Total, Used, Free Shared, Cached and Available.
  * Network bandwidth: Bytes received and Sent from specific interface or all interfaces (change this in code).
  * SWAP: Total, Used and Free.
@@ -37,6 +37,7 @@ Just execute the script! Script write all data (by default) in **'/dev/shm/cpu_s
 
  * Note 2: CPU usage is the same from 'top' or 'htop' command, then, pay attention with number of cores and value returned. Eg: In CPU with 4 cores, script return 100% when CPU usage is 25%, because 400% is the max!
 
+ * Note 3: CPU Temperature can or not is available in your computer/server. To read Raspberry Pi's temperature, change the line that call **'get_temp(None)'** to **'get_temp('raspberry')'**
 
 If you would like to visualize in Grafana, see below:
 
@@ -44,4 +45,4 @@ If you would like to visualize in Grafana, see below:
  * 2. Download Grafana (https://grafana.com/grafana/download)
  * 3. Download SQLite Plugin for Grafana (https://grafana.com/grafana/plugins/frser-sqlite-datasource/)
  * 4. Add the database file path to SQLite Plugin (default is **'/dev/shm/cpu_stats.db'**)
- * 5. Import **server.json** file in your Grafana.
+ * 5. Import **server.json** file in your Grafana (or **server_temp.json** with Temp graph).

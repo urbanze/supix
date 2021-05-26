@@ -5,7 +5,7 @@ import psutil
 
 def db_create():
     try:
-        db_cur.execute("CREATE TABLE cpu (time INTEGER, cpu1 REAL, cpu5 REAL, cpu15 REAL, netRcv INTEGER, netSnt	INTEGER, ramT	INTEGER, ramU	INTEGER, ramF INTEGER, ramS INTEGER, ramC INTEGER, ramA INTEGER, swpT INTEGER, swpU INTEGER, swpF INTEGER);")
+        db_cur.execute("CREATE TABLE cpu (time INTEGER, cpu1 REAL, cpu5 REAL, cpu15 REAL, netRcv INTEGER, netSnt	INTEGER, ramT	INTEGER, ramU	INTEGER, ramF INTEGER, ramS INTEGER, ramC INTEGER, ramA INTEGER, swpT INTEGER, swpU INTEGER, swpF INTEGER, temp REAL);")
 
     except Exception:
         pass
@@ -19,6 +19,9 @@ def db_insert(table, columns, values):
         print("SQlite error: ", err)
 
 def terminal(cmd):
+    if " " in cmd:
+        cmd = cmd.split()
+    
     out = subprocess.run(cmd, stdout=subprocess.PIPE)
     return out.stdout.decode("utf-8")
 
@@ -56,15 +59,15 @@ def get_mem():
 
     return values
 
-def get_network(itf):
+def get_network(interface):
     values = []
 
-    if (itf is None):
+    if (interface is None):
         values.append(psutil.net_io_counters().bytes_recv)
         values.append(psutil.net_io_counters().bytes_sent)
     else:
         x = psutil.net_io_counters(pernic=True)
-        x = str(x.get(itf)).split(", ")
+        x = str(x.get(interface)).split(", ")
         tx = str(x[0]).split("=")[1]
         rx = str(x[1]).split("=")[1]
 
@@ -73,10 +76,24 @@ def get_network(itf):
     
     return values
 
+def get_temp(device):
+    temp = -1
+
+    if device is None:
+        x = str(psutil.sensors_temperatures().get("coretemp")[0])
+        x = x.split(", ")[1]
+        x = x.split("=")[1]
+        temp = x
+    
+    elif 'raspberry' in device:
+        out = terminal('vcgencmd measure_temp').split("=")
+        temp = out[1].split("'")[0]
+
+    return temp
 
 
 
-db_conn = sql.connect("/dev/shm/cpu_stats.db")
+db_conn = sql.connect('/dev/shm/cpu_stats.db')
 db_cur  = db_conn.cursor()
 db_create()
 
@@ -86,8 +103,8 @@ while 1:
     data.extend(get_cpu())
     data.extend(get_network(None))#None for all interfaces or name (str) of specific interface, like 'eth0'
     data.extend(get_mem())
+    data.append(get_temp(None))#None for common computers, 'raspberry' for any Raspberry PI.
 
-
-    db_insert("cpu", "time, cpu1, cpu5, cpu15, netRcv, netSnt, ramT, ramU, ramF, ramS, ramC, ramA, swpT, swpU, swpF", data)
+    db_insert("cpu", "time, cpu1, cpu5, cpu15, netRcv, netSnt, ramT, ramU, ramF, ramS, ramC, ramA, swpT, swpU, swpF, temp", data)
     time.sleep(60)
 
